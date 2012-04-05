@@ -149,7 +149,7 @@ module Omnibus
             end
 
             task pkg_type => config.package_dir
-            task pkg_type => "#{@name}:health_check"
+            # task pkg_type => "#{@name}:health_check"
           end
         end
 
