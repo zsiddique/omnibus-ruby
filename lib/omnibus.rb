@@ -64,15 +64,28 @@ module Omnibus
 
     def self.software(*path_specs)
       FileList[*path_specs].each do |f|
-        s = Omnibus::Software.load(f)
-        Omnibus.component_added(s)
-        s
+        Omnibus::Project.all_projects.each do |p|
+          s = Omnibus::Software.load(f, p)
+          # TODO: only load and register needed software for each project
+          #
+          # currently we are loading and registering every software
+          # definition for every project and relying on the fact that
+          # the depenendency tree for the project won't build the
+          # unnecessary bits. What does happen, however, is that the
+          # version manifest for a particular project will have the
+          # versions for ALLTHETHINGS. Currently (04/05/12) this is
+          # fine since chef-full is a subset of private-chef. This
+          # should be fixed as soon as we have the extra time.
+          Omnibus.component_added(s)
+        end
       end
     end
 
     def self.projects(*path_specs)
       FileList[*path_specs].each do |f|
-        Omnibus::Project.load(f)
+        p = Omnibus::Project.load(f)
+        Omnibus::Project.all_projects << p
+        p
       end
     end
   end

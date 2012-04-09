@@ -13,6 +13,10 @@ module Omnibus
       new(IO.read(filename), filename)
     end
 
+    def self.all_projects
+      @@projects ||= []
+    end
+
     def initialize(io, filename)
       @exclusions = Array.new
       instance_eval(io)
@@ -24,13 +28,18 @@ module Omnibus
       @name
     end
 
+    def install_path(val=NULL_ARG)
+      @install_path = val unless val.equal?(NULL_ARG)
+      @install_path
+    end
+
     def iteration
       if platform_family == 'rhel'
         platform_version =~ /^(\d+)/
         maj = $1
-        return "1.el#{maj}"
+        return "#{build_iteration}.el#{maj}"
       end
-      return "1.#{platform}.#{platform_version}"
+      return "#{build_iteration}.#{platform}.#{platform_version}"
     end
 
     def description(val=NULL_ARG)
@@ -41,6 +50,16 @@ module Omnibus
     def replaces(val=NULL_ARG)
       @replaces = val unless val.equal?(NULL_ARG)
       @replaces
+    end
+
+    def build_version(val=NULL_ARG)
+      @build_version = val unless val.equal?(NULL_ARG)
+      @build_version
+    end
+
+    def build_iteration(val=NULL_ARG)
+      @build_iteration = val unless val.equal?(NULL_ARG)
+      @build_iteration
     end
 
     def dependencies(val)
@@ -67,20 +86,18 @@ module Omnibus
       Omnibus.config
     end
 
-    def build_version
-      Omnibus::BuildVersion.full
-    end
-
     def package_scripts_path
       "#{Omnibus.root}/package-scripts/#{name}"
     end
 
     def package_types
-      case platform_family 
-      when 'debian' 
+      case platform_family
+      when 'debian'
         [ "deb" ]
       when 'fedora', 'rhel'
         [ "rpm" ]
+      when 'solaris2'
+        [ "solaris" ]
       else
         []
       end
@@ -98,13 +115,6 @@ module Omnibus
           namespace @name do
             desc "package #{@name} into a #{pkg_type}"
             task pkg_type => (@dependencies.map {|dep| "software:#{dep}"}) do
-              if !File.exists?("#{config.install_dir}/setup.sh")
-                shell = Mixlib::ShellOut.new("cp setup.sh #{config.install_dir}",
-                                             :live_stream => STDOUT, 
-                                             :cwd => package_scripts_path)
-                shell.run_command
-                shell.error!
-              end
 
               # build the fpm command
               fpm_command = ["fpm",
@@ -113,12 +123,17 @@ module Omnibus
                              "-v #{build_version}",
                              "-n #{@name}",
                              "--iteration #{iteration}",
-                             config.install_dir,
+                             install_path,
                              "--post-install '#{package_scripts_path}/postinst'",
-                             "--post-uninstall '#{package_scripts_path}/postrm'",
+                             "--pre-uninstall '#{package_scripts_path}/prerm'",
                              "-m 'Opscode, Inc.'",
                              "--description 'The full stack of #{@name}'",
                              "--url http://www.opscode.com"]
+
+              # solaris packages don't support --post-uninstall
+              unless pkg_type == "solaris"
+                fpm_command << "--post-uninstall '#{package_scripts_path}/postrm'"
+              end
 
               @exclusions.each do |pattern|
                 fpm_command << "--exclude '#{pattern}'"
@@ -134,6 +149,7 @@ module Omnibus
             end
 
             task pkg_type => config.package_dir
+            task pkg_type => "#{@name}:health_check"
           end
         end
 
@@ -147,6 +163,11 @@ module Omnibus
 
         desc "package #{@name}"
         task @name => "#{@name}:copy"
+
+        desc "run the health check on the #{@name} install path"
+        task "#{@name}:health_check" do
+          Omnibus::HealthCheck.run(install_path)
+        end
       end
     end
   end

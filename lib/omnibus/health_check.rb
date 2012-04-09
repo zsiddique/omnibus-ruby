@@ -1,24 +1,51 @@
 module Omnibus
   class HealthCheck
 
-    WHITELIST_LIBS = [/linux-vdso.+/,
-                      /libc\.so/,
+    WHITELIST_LIBS = [
                       /ld-linux/,
-                      /libdl/,
-                      /libpthread/,
-                      /libm\.so/,
+                      /libc\.so/,
                       /libcrypt\.so/,
-                      /librt\.so/,
-                      /libutil\.so/,
-                      /libgcc_s\.so/,
-                      /libstdc\+\+\.so/,
-                      /libnsl\.so/,
+                      /libdl/,
                       /libfreebl\d\.so/,
-                      /libresolv\.so/]
+                      /libgcc_s\.so/,
+                      /libm\.so/,
+                      /libnsl\.so/,
+                      /libpthread/,
+                      /libresolv\.so/,
+                      /librt\.so/,
+                      /libstdc\+\+\.so/,
+                      /libutil\.so/,
+                      /linux-vdso.+/
+                      ]
 
-    def self.run
-      install_dir = Omnibus.config.install_dir
-      ldd_cmd = "find #{install_dir} -type f | xargs ldd"
+    SOLARIS_WHITELIST_LIBS = [
+                              /libaio\.so/,
+                              /libavl\.so/,
+                              /libcrypt_[di]\.so/,
+                              /libcrypto.so/,
+                              /libcurses\.so/,
+                              /libdoor\.so/,
+                              /libgen\.so/,
+                              /libmd5\.so/,
+                              /libmd\.so/,
+                              /libmp\.so/,
+                              /libscf\.so/,
+                              /libsec\.so/,
+                              /libsocket\.so/,
+                              /libssl.so/,
+                              /libuutil\.so/
+                             ]
+    
+    WHITELIST_FILES = [
+                       /jre\/bin\/javaws/,
+                       /jre\/bin\/policytool/,
+                       /jre\/lib/
+                      ]
+
+    WHITELIST_LIBS.push(*SOLARIS_WHITELIST_LIBS)
+
+    def self.run(install_dir)
+      ldd_cmd = "find #{install_dir}/ -type f | xargs ldd"
       shell = Mixlib::ShellOut.new(ldd_cmd)
       shell.run_command
 
@@ -31,16 +58,18 @@ module Omnibus
         case line
         when /^(.+):$/
           current_library = $1
-        when /^\s+(.+) \=\> (.+) \(.+\)$/
+        when /^\s+(.+) \=\>\s+(.+)( \(.+\))?$/
           name = $1
           linked = $2
           safe = nil
           WHITELIST_LIBS.each do |reg| 
             safe ||= true if reg.match(name)
           end
-          safe ||= true if current_library =~ /jre\/lib/
+          WHITELIST_FILES.each do |reg|
+            safe ||= true if reg.match(current_library)
+          end
 
-          if !safe && linked !~ /\/opt\/opscode/
+          if !safe && linked !~ Regexp.new(install_dir)
             bad_libs[current_library] ||= {}
             bad_libs[current_library][name] ||= {} 
             if bad_libs[current_library][name].has_key?(linked)
