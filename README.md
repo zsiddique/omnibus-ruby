@@ -61,4 +61,24 @@ end
 
 **command**: An individual build step.
 
-### Project DSL
+### Projects
+
+```ruby
+name            "chef-full"
+
+install_path    "/opt/chef"
+build_version   "0.10.8"
+build_iteration "4"
+
+dependencies    ["chef"]
+```
+
+**name**: The name of the project.
+
+**install_path**: The desired install location of the package.
+
+**build_version**: The package version.
+
+**build_iteration**: The package iteration number.
+
+**dependencies**: A list of software components to include in this package.
