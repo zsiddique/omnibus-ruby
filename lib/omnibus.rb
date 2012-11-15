@@ -101,6 +101,7 @@ module Omnibus
 
     def self.projects(*path_specs)
       FileList[*path_specs].each do |f|
+        puts f
         p = Omnibus::Project.load(f)
         Omnibus::Project.all_projects << p
         p

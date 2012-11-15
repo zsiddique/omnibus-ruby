@@ -36,6 +36,7 @@ module Omnibus
     end
 
     def initialize(io, filename)
+      @archive = false
       @exclusions = Array.new
       @runtime_dependencies = Array.new
       instance_eval(io)
@@ -86,6 +87,11 @@ module Omnibus
       @build_iteration
     end
 
+    def archive(val=NULL_ARG)
+      @archive = val unless val.equal?(NULL_ARG)
+      @archive
+    end
+
     def dependencies(val)
       @dependencies = val
     end
@@ -132,6 +138,10 @@ module Omnibus
     end
 
     private
+
+    def archive_command
+      "tar cz -pPf #{name}-#{build_version}-#{platform_family}.tar.gz /opt/opscode"
+    end
 
     def fpm_command(pkg_type)
       command_and_opts = ["fpm",
@@ -203,7 +213,11 @@ module Omnibus
                 # rm the makeself installer (for incremental builds)
                 package_commands << "rm -f #{install_path}/makeselfinst"
               else # pkg_type == "fpm"
-                package_commands <<  fpm_command(pkg_type).join(" ")
+                if @archive
+                  package_commands << archive_command
+                else
+                  package_commands <<  fpm_command(pkg_type).join(" ")
+                end
               end
 
               # run the commands
