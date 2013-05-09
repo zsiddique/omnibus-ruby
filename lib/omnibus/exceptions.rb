@@ -1,5 +1,8 @@
 module Omnibus
 
+  class MissingArtifact < RuntimeError
+  end
+
   class InvalidS3Configuration < RuntimeError
     def initialize(s3_bucket, s3_access_key, s3_secret_key)
       @s3_bucket, @s3_access_key, @s3_secret_key = s3_bucket, s3_access_key, s3_secret_key
