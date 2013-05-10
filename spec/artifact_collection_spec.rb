@@ -90,6 +90,17 @@ E
     ]
   end
 
+  let(:build_configurations) do
+    %w[
+      build_os=centos-5,machine_architecture=x64,role=oss-builder/jenkins
+      build_os=centos-5,machine_architecture=x64,role=oss-builder/jenkins
+      build_os=centos-5,machine_architecture=x86,role=oss-builder/jenkins
+      build_os=centos-5,machine_architecture=x86,role=oss-builder/jenkins
+    ]
+  end
+
+  let(:release_config_dir) { "build_os=centos-5,machine_architecture=x64,role=oss-builder/jenkins" }
+
   subject(:artifact_collection) do
     Omnibus::ArtifactCollection.new("demoproject", {})
   end
@@ -102,16 +113,22 @@ E
     artifact_collection.config.should == {}
   end
 
+  it "selects a build to load release configurations from" do
+    Dir.should_receive(:[]).with("*/jenkins").and_return(build_configurations)
+    artifact_collection.release_config_dir.should == release_config_dir
+  end
+
+
   it "loads the mapping of build platforms to install platforms from the local copy" do
-    pending("the assumption underlying this behavior has changed")
-    expected_path = File.expand_path("../demoproject.json", __FILE__)
+    expected_path = "#{release_config_dir}/demoproject.json"
+    Dir.should_receive(:[]).with("*/jenkins").and_return(build_configurations)
     IO.should_receive(:read).with(expected_path).and_return(platform_map_json)
     artifact_collection.platform_map_json.should == platform_map_json
   end
 
   it "loads the mapping of platform short names to long names from the local copy" do
-    pending("the assumption underlying this behavior has changed")
-    expected_path = File.expand_path("../demoproject-platform-names.json", __FILE__)
+    Dir.should_receive(:[]).with("*/jenkins").and_return(build_configurations)
+    expected_path = "#{release_config_dir}/demoproject-platform-names.json"
     IO.should_receive(:read).with(expected_path).and_return(platform_name_map_json)
     artifact_collection.platform_name_map_json.should == platform_name_map_json
   end

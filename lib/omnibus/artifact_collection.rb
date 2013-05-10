@@ -10,7 +10,17 @@ module Omnibus
   # This will be the case if you are using jenkins multiconfiguration jobs with
   # a copy artifacts build step for your release job.
   #
-  # @todo document project.json and project-platform-names.json
+  # ArtifactCollection requires that at least one build configuration have a
+  # "jenkins" directory containing a file named "$project.json" and one named
+  # "$project-platform-names.json". The former is responsible for mapping build
+  # configurations to install platforms (e.g., build on CentOS, deploy on
+  # CentOS and SUSE, or reuse the same build across different Ubuntu releases).
+  # The "$project-platform-names.json" file maps short platform names (e.g.,
+  # "el") to long names (e.g., "Enterprise Linux") and is used by the UI that
+  # displays available packages.
+  #
+  # @see #platform_map_json example of the platform map format.
+  # @see #platform_name_map_json example of the platform name map format.
   class ArtifactCollection
 
     attr_reader :project
@@ -24,6 +34,15 @@ module Omnibus
     def initialize(project, config)
       @project = project
       @config = config
+    end
+
+    # Gives the path to a "jenkins" directory inside a release.
+    # @return [String] the path, relative to pwd, to a directory containing
+    #   release configuration JSON files.
+    # @see #platform_map_json
+    # @see #platform_name_map_path
+    def release_config_dir
+      Dir["*/jenkins"].first
     end
 
     # @return [String] JSON representation of the project's map between build and install platforms.
@@ -42,7 +61,7 @@ module Omnibus
     #         ]
     #     ],
     def platform_map_json
-      IO.read(File.expand_path("../#{project}.json", __FILE__))
+      IO.read(File.join(release_config_dir, "#{project}.json"))
     end
 
     # @return [Hash] the project's map between build and install platforms.
@@ -67,7 +86,7 @@ module Omnibus
     # @return [String] path to the project's JSON file mapping build to install
     #   platforms. The file should be named `"#{project}-platform-names.json"`
     def platform_name_map_path
-      File.expand_path("../#{project}-platform-names.json", __FILE__)
+      File.join(release_config_dir, "/#{project}-platform-names.json")
     end
 
     # @return [String] JSON string mapping platform short names to long names
