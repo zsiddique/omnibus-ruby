@@ -468,6 +468,7 @@ module Omnibus
       end
 
       command_and_opts << " --replaces #{@replaces}" if @replaces
+puts "In fpm_command #{commanda_and_opts}"
       command_and_opts
     end
 
@@ -532,6 +533,7 @@ module Omnibus
                   command = cmd
                 end
 
+puts "In render_tasks #{command} having options #{command_options}"
                 shell = Mixlib::ShellOut.new(command, cmd_options)
                 shell.run_command
                 shell.error!
