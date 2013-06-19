@@ -539,6 +539,10 @@ module Omnibus
       if File.exist?("#{package_scripts_path}/postrm") && pkg_type != "solaris"
         command_and_opts << "--post-uninstall '#{package_scripts_path}/postrm'"
       end
+      # debian seems to be using current user, set to root
+      if pkg_type == "debian"
+        command_and_opts << "--deb-user root --deb-group root"
+      end
 
       @exclusions.each do |pattern|
         command_and_opts << "--exclude '#{pattern}'"
