@@ -527,7 +527,9 @@ module Omnibus
                           "--iteration #{iteration}",
                           "-m '#{maintainer}'",
                           "--description '#{description}'",
-                          "--url #{homepage}"]
+                          "--url #{homepage}",
+                          "--deb-user root",
+                          "--deb-group root"]
       if File.exist?("#{package_scripts_path}/postinst")
         command_and_opts << "--post-install '#{package_scripts_path}/postinst'"
       end
@@ -539,7 +541,6 @@ module Omnibus
       if File.exist?("#{package_scripts_path}/postrm") && pkg_type != "solaris"
         command_and_opts << "--post-uninstall '#{package_scripts_path}/postrm'"
       end
-        command_and_opts << "--deb-user root --deb-group root"
       @exclusions.each do |pattern|
         command_and_opts << "--exclude '#{pattern}'"
       end
