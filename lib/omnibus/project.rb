@@ -540,7 +540,7 @@ module Omnibus
         command_and_opts << "--post-uninstall '#{package_scripts_path}/postrm'"
       end
       # debian seems to be using current user, set to root
-      if pkg_type == "debian"
+      if pkg_type == "deb"
         command_and_opts << "--deb-user root --deb-group root"
       end
 
