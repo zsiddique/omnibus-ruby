@@ -539,11 +539,7 @@ module Omnibus
       if File.exist?("#{package_scripts_path}/postrm") && pkg_type != "solaris"
         command_and_opts << "--post-uninstall '#{package_scripts_path}/postrm'"
       end
-      # debian seems to be using current user, set to root
-      if pkg_type == "deb"
         command_and_opts << "--deb-user root --deb-group root"
-      end
-
       @exclusions.each do |pattern|
         command_and_opts << "--exclude '#{pattern}'"
       end
@@ -558,6 +554,7 @@ module Omnibus
 
       command_and_opts << " --replaces #{@replaces}" if @replaces
       command_and_opts << install_path
+      puts "FPM Commands are: #{command_and_opts}"
       command_and_opts
     end
 
@@ -674,6 +671,7 @@ module Omnibus
                 run_bff
               else # pkg_type == "fpm"
                 run_fpm(pkg_type)
+                puts "I am building FPM"
               end
 
               render_metadata(pkg_type)
