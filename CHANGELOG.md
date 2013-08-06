@@ -1,3 +1,28 @@
+## 1.2.0 (July 12, 2013)
+
+FEATURES:
+
+* Add `whitelist_file` to software DSL. This allows an individual software 
+  definition to declare files that should be ignored during health checking.
+
+IMPROVEMENTS:
+
+* Raise an exception if a project's dependency is not found.
+
+BUG FIXES:
+
+* Properly load a project's transitive dependencies.
+* Ensure a component is only added to a library one time.
+
+## 1.1.1 (July 2, 2013)
+
+BUG FIXES:
+
+* Raise an exception if a patch file is not found.
+* Be more explicit about types in CPU computation.
+* Include pkg version, iteration, arch for solaris packages.
+* Fix assorted typos in CLI output.
+
 ## 1.1.0 (June 12, 2013)
 
 FEATURES:
